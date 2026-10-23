@@ -66,3 +66,57 @@ _As a [user role], I want [feature/goal], so that [reason]._
 **Priority:** Medium  
 **Story Points:** 1  
 **Notes:** Provides clear feedback while keeping the error message generic to prevent username enumeration.
+
+## Exercise 3: Homepage User Stories
+
+### 1. View Welcome Message
+
+**Title:** Personalized Welcome Message on Homepage
+
+**User Story:**
+*As a user, I want to see a personalized welcome message with my name on the homepage, so that I feel recognized and can confirm I am logged into the correct account.*
+
+**Acceptance Criteria:**
+1. The homepage displays a greeting message incorporating the logged-in user's name (e.g., "Welcome back, [Name]").
+2. If the user name is unavailable, a default generic greeting ("Welcome back") is displayed.
+3. The welcome banner is prominently positioned at the top of the homepage view.
+
+**Priority:** High  
+**Story Points:** 1  
+**Notes:** Ensures clear confirmation of user session identity upon navigating to the homepage.
+
+---
+
+### 2. Display Weekly Progress
+
+**Title:** Daily and Weekly Habit Progress Overview
+
+**User Story:**
+*As a user, I want to see my daily progress for each habit on the homepage, so that I can easily monitor my progress.*
+
+**Acceptance Criteria:**
+1. A visual progress summary (e.g., completion percentage or progress bar) is rendered for active habits.
+2. The user can view daily progress breakdowns corresponding to the current week.
+3. Progress data updates dynamically when a habit status changes.
+
+**Priority:** High  
+**Story Points:** 3  
+**Notes:** Provides a high-level visual summary to encourage daily user engagement.
+
+---
+
+### 3. View Completed Habits
+
+**Title:** Completed Habits Section
+
+**User Story:**
+*As a user, I want to see a section for completed habits on the homepage, so that I can track what I have already achieved.*
+
+**Acceptance Criteria:**
+1. A dedicated section or list displays habits marked as fully completed for the selected period.
+2. Completed habits show clear visual indicators (e.g., checkmarks or striking through).
+3. Users can collapse or expand the completed habits list to save screen space.
+
+**Priority:** Medium  
+**Story Points:** 2  
+**Notes:** Keeps completed items visible for motivation without cluttering the active habits list.
