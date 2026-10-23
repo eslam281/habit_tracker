@@ -67,6 +67,8 @@ _As a [user role], I want [feature/goal], so that [reason]._
 **Story Points:** 1  
 **Notes:** Provides clear feedback while keeping the error message generic to prevent username enumeration.
 
+---
+
 ## Exercise 3: Homepage User Stories
 
 ### 1. View Welcome Message
@@ -120,3 +122,77 @@ _As a [user role], I want [feature/goal], so that [reason]._
 **Priority:** Medium  
 **Story Points:** 2  
 **Notes:** Keeps completed items visible for motivation without cluttering the active habits list.
+---
+
+## Exercise 4: Menu Navigation User Stories
+
+### 1. Access Menu Options
+
+**Title:** Navigation Menu Access
+
+**User Story:**
+*As a user, I want to access a menu with options for configuring my habits, viewing reports, editing my profile, and signing out, so that I can easily navigate to different parts of the app.*
+
+**Acceptance Criteria:**
+1. A menu button/icon (e.g., hamburger menu or drawer) is visible and accessible from any primary app screen.
+2. Tapping the menu icon expands or presents all available options clearly: Habits, Reports, Profile, and Sign Out.
+3. The menu interface can be easily closed or dismissed without making a selection.
+
+**Priority:** High  
+**Story Points:** 2  
+**Notes:** Acts as the primary global navigation entry point across the application.
+
+---
+
+### 2. Navigate to Profile
+
+**Title:** Profile Page Navigation
+
+**User Story:**
+*As a user, I want to navigate to my profile page from the menu, so that I can view and edit my personal details.*
+
+**Acceptance Criteria:**
+1. The navigation menu includes a clearly labeled "Profile" option.
+2. Clicking "Profile" redirects the user directly to the profile management page.
+3. The active menu state highlights or updates upon successful navigation to the Profile screen.
+
+**Priority:** Medium  
+**Story Points:** 1  
+**Notes:** Allows quick access for users to manage account details and preferences.
+
+---
+
+### 3. Navigate to Habits Page
+
+**Title:** Habits Management Navigation
+
+**User Story:**
+*As a user, I want to access the habits page from the menu, so that I can configure and manage my habits.*
+
+**Acceptance Criteria:**
+1. The navigation menu contains a dedicated "Habits" option.
+2. Selecting "Habits" navigates the user to the habits overview/configuration screen.
+3. The user can view existing habits and access controls to create or edit habit entries.
+
+**Priority:** High  
+**Story Points:** 2  
+**Notes:** Core feature shortcut ensuring fast access to habit customization.
+
+---
+
+### 4. Sign Out from Menu
+
+**Title:** User Logout via Navigation Menu
+
+**User Story:**
+*As a user, I want to sign out of my account using an option in the menu, so that I can securely log out when I'm finished using the app.*
+
+**Acceptance Criteria:**
+1. The menu displays a prominent "Sign Out" or "Log Out" action button.
+2. Selecting "Sign Out" prompts a quick confirmation modal to prevent accidental logouts.
+3. Upon confirming logout, the active user session is terminated and redirected to the login screen.
+4. Temporary session cache is cleared according to security policy requirements.
+
+**Priority:** High  
+**Story Points:** 1  
+**Notes:** Ensures user security and clean session state reset upon exiting the application.
