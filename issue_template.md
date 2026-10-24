@@ -196,3 +196,75 @@ _As a [user role], I want [feature/goal], so that [reason]._
 **Priority:** High  
 **Story Points:** 1  
 **Notes:** Ensures user security and clean session state reset upon exiting the application.
+---
+
+## Exercise 5: Profile Page User Stories
+
+### 1. View Personal Information
+
+**Title:** View Saved Registration Details
+
+**User Story:**
+*As a user, I want to view my saved name, username, age, and country on my profile page, so that I can see the details I provided during registration.*
+
+**Acceptance Criteria:**
+1. The profile page renders distinct fields for Name, Username, Age, and Country.
+2. The values displayed match the current active session/user registration data.
+3. Fields remain in read-only mode until the user explicitly initiates editing.
+
+**Priority:** High  
+**Story Points:** 1  
+**Notes:** Provides transparency so users can review their saved personal details.
+
+---
+
+### 2. Edit Personal Information
+
+**Title:** Edit Profile Details Form
+
+**User Story:**
+*As a user, I want to update my name, username, age, and country on my profile page, so that I can keep my information up to date.*
+
+**Acceptance Criteria:**
+1. An "Edit Profile" button toggles input fields into an editable state.
+2. All editable fields perform proper input validation (e.g., preventing empty required fields or invalid age numbers).
+3. The interface provides clear "Save" and "Cancel" actions while in edit mode.
+
+**Priority:** High  
+**Story Points:** 2  
+**Notes:** Allows flexible updates to user profile attributes when details change.
+
+---
+
+### 3. Save Updated Information
+
+**Title:** Persist Profile Changes
+
+**User Story:**
+*As a user, I want the changes I make to my profile to be saved, so that my updated details are stored and reflected throughout the app.*
+
+**Acceptance Criteria:**
+1. Clicking the "Save" button commits all valid modifications to the user profile model.
+2. A success confirmation feedback (toast/banner) alerts the user that changes were saved successfully.
+3. If saving fails, an error message appears and retains the user's unsaved edits in the form.
+
+**Priority:** High  
+**Story Points:** 2  
+**Notes:** Ensures state persistence and seamless updates across the active session.
+
+---
+
+### 4. Update Name in Header
+
+**Title:** Dynamic Header Name Synchronization
+
+**User Story:**
+*As a user, I want my updated name to be displayed in the app's header after I change it in the profile, so that my changes are immediately visible.*
+
+**Acceptance Criteria:**
+1. Updating the name field in the profile automatically triggers a state update in the top app header/welcome banner.
+2. The newly saved name reflects instantly across global navigation headers without requiring a manual page refresh.
+
+**Priority:** Medium  
+**Story Points:** 1  
+**Notes:** Enhances UI consistency and real-time state synchronization across screens.
