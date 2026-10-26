@@ -54,7 +54,7 @@ class _LoginScreenState extends State<LoginScreen> {
     return isFormValid;
   }
 
-  Future<void> authenticateUser() async {
+  Future<bool> authenticateUser() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
 
     final enteredInput = _usernameController.text.trim();
@@ -64,34 +64,47 @@ class _LoginScreenState extends State<LoginScreen> {
     final storedUsername = prefs.getString('username');
     final storedPassword = prefs.getString('password');
 
-    final isEmailMatch = storedEmail != null &&
-        storedEmail.toLowerCase() == enteredInput.toLowerCase();
-    final isUsernameMatch = storedUsername != null &&
-        storedUsername.toLowerCase() == enteredInput.toLowerCase();
+    final isEmailMatch = storedEmail != null && storedEmail.toLowerCase() == enteredInput.toLowerCase();
+
+    final isUsernameMatch = storedUsername != null && storedUsername.toLowerCase() == enteredInput.toLowerCase();
     final isDefaultMatch =
         (enteredInput == defaultUsername || enteredInput == 'test@example.com') &&
             enteredPassword == defaultPassword;
 
     if ((isEmailMatch || isUsernameMatch) && storedPassword == enteredPassword) {
       await prefs.setBool('isLoggedIn', true);
+      await prefs.setString('currentUser', storedUsername ?? enteredInput);
       _showSnackBar('Login successful!', isError: false);
+      return true;
     } else if (isDefaultMatch) {
       await prefs.setBool('isLoggedIn', true);
+      await prefs.setString('currentUser', defaultUsername);
       _showSnackBar('Login successful!', isError: false);
+      return true;
     } else {
-      _showSnackBar('Invalid email/username or password. Please try again.');
+      if (storedUsername == null && storedEmail == null) {
+        _showSnackBar(
+            'No registered account found. Please sign up or use default credentials ("$defaultUsername" / "$defaultPassword").');
+      } else {
+        _showSnackBar('Invalid email/username or password. Please try again.');
+      }
+      return false;
     }
   }
 
   void handleLogin() async {
     if (validateForm()) {
-      await authenticateUser();
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(
-          builder: (context) => HabitTrackerScreen(username: _usernameController.text),
-        ),
-      );
+      final isAuthenticated = await authenticateUser();
+      if (isAuthenticated && mounted) {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (context) => HabitTrackerScreen(
+              username: _usernameController.text.trim(),
+            ),
+          ),
+        );
+      }
     }
   }
 
