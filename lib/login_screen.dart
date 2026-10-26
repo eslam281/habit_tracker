@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:habit_tracker/habit_tracker_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -85,6 +86,12 @@ class _LoginScreenState extends State<LoginScreen> {
   void handleLogin() async {
     if (validateForm()) {
       await authenticateUser();
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (context) => HabitTrackerScreen(username: _usernameController.text),
+        ),
+      );
     }
   }
 

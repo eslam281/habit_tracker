@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:habit_tracker/habit_tracker_screen.dart';
 import 'package:habit_tracker/register_screen.dart';
 
 import 'login_screen.dart';
@@ -18,6 +19,7 @@ class HabitTrackerApp extends StatelessWidget {
       routes:{
         '/login': (context) => LoginScreen(),
         '/register': (context) => RegisterScreen(),
+        // '/habit_tracker': (context) => HabitTrackerScreen(username: '',),
       },
     );
   }

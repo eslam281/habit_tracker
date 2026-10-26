@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:habit_tracker/habit_tracker_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class RegisterScreen extends StatefulWidget {
@@ -96,8 +97,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
       return false;
     }
 
-                      final emailRegex =
-                          RegExp(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$');
+    final emailRegex =
+    RegExp(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$');
     if (!emailRegex.hasMatch(email)) {
       _showSnackBar('Please enter a valid email address');
       return false;
@@ -328,7 +329,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             _showSnackBar(
                                 'Registration successful! User data saved.',
                                 isError: false);
-                            Navigator.pushNamed(context, '/login');
+                            Navigator.pushReplacement(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => HabitTrackerScreen(username: _usernameController.text),
+                              ),
+                            );
                           }
                         } else {
                           _showSnackBar('All fields are required');
