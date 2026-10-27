@@ -1,8 +1,10 @@
 import 'dart:convert';
+
 import 'package:flutter/material.dart';
-import 'package:habit_tracker/add_habit_screen.dart';
-import 'package:habit_tracker/detail_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
+import 'add_habit_screen.dart';
+import 'detail_screen.dart';
 
 class HabitTrackerScreen extends StatefulWidget {
   final String username;
@@ -21,28 +23,11 @@ class _HabitTrackerScreenState extends State<HabitTrackerScreen> {
   @override
   void initState() {
     super.initState();
-    _loadHabits();
-  }
-  Future<List<String>> fetchCountries() async {
-    List<String> countries = [
-      'United States',
-      'Canada',
-      'United Kingdom',
-      'Australia',
-      'India',
-      'Germany',
-      'France',
-      'Japan',
-      'China',
-      'Brazil',
-      'South Africa'
-    ];
-
-    return countries;
+    _loadUserData();
   }
 
-  Future<void> _loadHabits() async {
-    final prefs = await SharedPreferences.getInstance();
+  Future<void> _loadUserData() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
 
     final storedName = prefs.getString('name');
     final storedUsername = prefs.getString('username');
@@ -91,15 +76,15 @@ class _HabitTrackerScreenState extends State<HabitTrackerScreen> {
   }
 
   Future<void> _saveHabits() async {
-    final prefs = await SharedPreferences.getInstance();
+    SharedPreferences prefs = await SharedPreferences.getInstance();
     await prefs.setString('selectedHabitsMap', jsonEncode(selectedHabitsMap));
     await prefs.setString('completedHabitsMap', jsonEncode(completedHabitsMap));
   }
 
   Color _getColorFromHex(String hexColor) {
-    hexColor = hexColor.replaceAll('#', '');
+    hexColor = hexColor.replaceAll('#', '').trim();
     if (hexColor.length == 6) {
-      hexColor = 'FF$hexColor'; // Add opacity if not included.
+      hexColor = 'FF$hexColor';
     }
     return Color(int.parse('0x$hexColor'));
   }
@@ -153,14 +138,15 @@ class _HabitTrackerScreenState extends State<HabitTrackerScreen> {
                         ),
                         const SizedBox(height: 16),
                         ElevatedButton.icon(
-                          onPressed: () async {
-                            await Navigator.push(
+                          onPressed: () {
+                            Navigator.push(
                               context,
                               MaterialPageRoute(
                                 builder: (context) => const AddHabitScreen(),
                               ),
-                            );
-                            _loadHabits();
+                            ).then((_) {
+                              _loadUserData();
+                            });
                           },
                           icon: const Icon(Icons.add, color: Colors.white),
                           label: const Text(
@@ -280,17 +266,18 @@ class _HabitTrackerScreenState extends State<HabitTrackerScreen> {
         ],
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: () async {
-          await Navigator.push(
+        onPressed: () {
+          Navigator.push(
             context,
             MaterialPageRoute(
               builder: (context) => const AddHabitScreen(),
             ),
-          );
-          _loadHabits();
+          ).then((_) {
+            _loadUserData();
+          });
         },
         backgroundColor: Colors.blue.shade700,
-        tooltip: 'Add / Configure Habits',
+        tooltip: 'Add Habits',
         child: const Icon(Icons.add, color: Colors.white),
       ),
     );

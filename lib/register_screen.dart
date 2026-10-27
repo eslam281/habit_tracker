@@ -1,6 +1,13 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
-import 'package:habit_tracker/habit_tracker_screen.dart';
+import 'package:fluttertoast/fluttertoast.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
+import 'country_list.dart';
+import 'habit_colors.dart';
+import 'habit_tracker_screen.dart';
+import 'login_screen.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -37,7 +44,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   @override
   void initState() {
     super.initState();
-    _fetchCountries();
+    _loadCountries();
   }
 
   @override
@@ -49,114 +56,117 @@ class _RegisterScreenState extends State<RegisterScreen> {
     super.dispose();
   }
 
-  Future<void> _fetchCountries() async {
-    List<String> subsetCountries = [
-      'United States',
-      'Canada',
-      'United Kingdom',
-      'Australia',
-      'India',
-      'Germany',
-      'France',
-      'Japan',
-      'China',
-      'Brazil',
-      'South Africa'
-    ];
+  Future<void> _loadCountries() async {
+    try {
+      List<String> countries = await fetchCountries();
+      if (mounted) {
+        setState(() {
+          _countries = countries;
+          if (_countries.isNotEmpty && !_countries.contains(_country)) {
+            _country = _countries[0];
+          }
+        });
+      }
+    } catch (e) {
+      _showToast('Error fetching countries');
+    }
+  }
 
-    setState(() {
-      _countries = subsetCountries;
-      _countries.sort();
-      _country = _countries.isNotEmpty ? _countries[0] : 'United States';
-    });
+  void _showToast(String message) {
+    Fluttertoast.showToast(
+      msg: message,
+      toastLength: Toast.LENGTH_SHORT,
+      gravity: ToastGravity.BOTTOM,
+      backgroundColor: Colors.red,
+      textColor: Colors.white,
+      fontSize: 16.0,
+    );
   }
 
   bool _validateFields() {
-    // 1. Trigger Form field validators
     final isFormValid = _formKey.currentState?.validate() ?? false;
 
-    // 2. Read values directly from TextEditingControllers
     final name = _nameController.text.trim();
     final username = _usernameController.text.trim();
     final email = _emailController.text.trim();
     final password = _passwordController.text;
 
-    // 3. Check if any required field is empty
     if (name.isEmpty) {
-      _showSnackBar('Please enter your name');
+      _showToast('Please enter your name');
       return false;
     }
 
     if (username.isEmpty) {
-      _showSnackBar('Please enter a username');
+      _showToast('Please enter a username');
       return false;
     }
 
-    if (email.isEmpty) {
-      _showSnackBar('Please enter an email address');
-      return false;
+    if (email.isNotEmpty) {
+      final emailRegex =
+          RegExp(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$');
+      if (!emailRegex.hasMatch(email)) {
+        _showToast('Please enter a valid email address');
+        return false;
+      }
     }
 
-    final emailRegex =
-    RegExp(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$');
-    if (!emailRegex.hasMatch(email)) {
-      _showSnackBar('Please enter a valid email address');
-      return false;
-    }
-
-    if (password.isEmpty) {
-      _showSnackBar('Please enter a password');
-      return false;
-    }
-
-    if (password.length < 6) {
-      _showSnackBar('Password must be at least 6 characters long');
+    if (password.isNotEmpty && password.length < 6) {
+      _showToast('Password must be at least 6 characters');
       return false;
     }
 
     if (selectedHabits.isEmpty) {
-      _showSnackBar('Please select at least one habit');
+      _showToast('Please select at least one habit');
       return false;
     }
 
     return isFormValid;
   }
 
-  void _showSnackBar(String message, {bool isError = true}) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: isError ? Colors.red.shade700 : Colors.green.shade700,
-        behavior: SnackBarBehavior.floating,
-        duration: const Duration(seconds: 3),
-      ),
-    );
-  }
-
-  bool validateForm() {
-    return _validateFields();
-  }
-
-  Future<void> saveUserData() async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
+  Future<void> _register() async {
+    if (!_validateFields()) return;
 
     final name = _nameController.text.trim();
     final username = _usernameController.text.trim();
     final email = _emailController.text.trim();
     final password = _passwordController.text;
-    final age = _age.round();
-    final country = _country;
+
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+
+    // Assign random color hexes using extracted habitColors helper
+    Map<String, String> selectedHabitsMap = {};
+    for (var habit in selectedHabits) {
+      selectedHabitsMap[habit] = getRandomColorHex();
+    }
 
     await prefs.setString('name', name);
     await prefs.setString('username', username);
-    await prefs.setString('email', email);
-    await prefs.setString('password', password);
-    await prefs.setInt('age', age);
-    await prefs.setString('country', country);
-    await prefs.setStringList('selectedHabits', selectedHabits);
+    if (email.isNotEmpty) await prefs.setString('email', email);
+    if (password.isNotEmpty) await prefs.setString('password', password);
+    await prefs.setDouble('age', _age);
+    await prefs.setString('country', _country);
+    await prefs.setString('selectedHabitsMap', jsonEncode(selectedHabitsMap));
     await prefs.setBool('isRegistered', true);
+
+    if (mounted) {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (context) => HabitTrackerScreen(username: username),
+        ),
+      );
+    }
   }
 
+  void _toggleHabitSelection(String habit) {
+    setState(() {
+      if (selectedHabits.contains(habit)) {
+        selectedHabits.remove(habit);
+      } else {
+        selectedHabits.add(habit);
+      }
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -174,11 +184,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.white),
           onPressed: () {
-            if (Navigator.canPop(context)) {
-              Navigator.pop(context);
-            } else {
-              Navigator.pushReplacementNamed(context, '/login');
-            }
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(builder: (context) => const LoginScreen()),
+            );
           },
         ),
       ),
@@ -204,12 +213,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     label: 'Name',
                     placeholder: 'Enter your name',
                     icon: Icons.person,
-                    validator: (value) {
-                      if (value == null || value.trim().isEmpty) {
-                        return 'Name is required';
-                      }
-                      return null;
-                    },
                   ),
                   const SizedBox(height: 10),
                   _buildInputField(
@@ -217,12 +220,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     label: 'Username',
                     placeholder: 'Enter your username',
                     icon: Icons.alternate_email,
-                    validator: (value) {
-                      if (value == null || value.trim().isEmpty) {
-                        return 'Username is required';
-                      }
-                      return null;
-                    },
                   ),
                   const SizedBox(height: 10),
                   _buildInputField(
@@ -231,17 +228,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     placeholder: 'Enter your email address',
                     icon: Icons.email,
                     keyboardType: TextInputType.emailAddress,
-                    validator: (value) {
-                      if (value == null || value.trim().isEmpty) {
-                        return 'Email is required';
-                      }
-                      final emailRegex =
-                          RegExp(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$');
-                      if (!emailRegex.hasMatch(value.trim())) {
-                        return 'Enter a valid email address';
-                      }
-                      return null;
-                    },
                   ),
                   const SizedBox(height: 10),
                   _buildInputField(
@@ -250,15 +236,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     placeholder: 'Enter your password',
                     icon: Icons.lock,
                     obscureText: true,
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Password is required';
-                      }
-                      if (value.length < 6) {
-                        return 'Must be at least 6 characters';
-                      }
-                      return null;
-                    },
                   ),
                   const SizedBox(height: 10),
                   Text('Age: ${_age.round()}',
@@ -282,21 +259,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   const SizedBox(height: 10),
                   const Text('Select Your Habits',
                       style: TextStyle(color: Colors.white, fontSize: 18)),
+                  const SizedBox(height: 10),
                   Wrap(
                     spacing: 10,
                     runSpacing: 10,
                     children: availableHabits.map((habit) {
                       final isSelected = selectedHabits.contains(habit);
                       return GestureDetector(
-                        onTap: () {
-                          setState(() {
-                            if (isSelected) {
-                              selectedHabits.remove(habit);
-                            } else {
-                              selectedHabits.add(habit);
-                            }
-                          });
-                        },
+                        onTap: () => _toggleHabitSelection(habit),
                         child: Container(
                           padding: const EdgeInsets.symmetric(
                               horizontal: 20, vertical: 10),
@@ -322,24 +292,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   const SizedBox(height: 20),
                   Center(
                     child: ElevatedButton(
-                      onPressed: () async {
-                        if (validateForm()) {
-                          await saveUserData();
-                          if (context.mounted) {
-                            _showSnackBar(
-                                'Registration successful! User data saved.',
-                                isError: false);
-                            Navigator.pushReplacement(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => HabitTrackerScreen(username: _usernameController.text),
-                              ),
-                            );
-                          }
-                        } else {
-                          _showSnackBar('All fields are required');
-                        }
-                      },
+                      onPressed: _register,
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.blue.shade600,
                         shape: RoundedRectangleBorder(
@@ -349,30 +302,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             horizontal: 80, vertical: 15),
                       ),
                       child: const Text(
-                        'Sign Up',
+                        'Register',
                         style: TextStyle(
                           fontSize: 18,
                           color: Colors.white,
                           fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 15),
-                  Center(
-                    child: TextButton(
-                      onPressed: () {
-                        if (Navigator.canPop(context)) {
-                          Navigator.pop(context);
-                        } else {
-                          Navigator.pushReplacementNamed(context, '/login');
-                        }
-                      },
-                      child: const Text(
-                        'Already have an account? Log in',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 16,
                         ),
                       ),
                     ),
@@ -393,18 +327,16 @@ class _RegisterScreenState extends State<RegisterScreen> {
     required IconData icon,
     bool obscureText = false,
     TextInputType keyboardType = TextInputType.text,
-    String? Function(String?)? validator,
   }) {
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(30),
       ),
-      child: TextFormField(
+      child: TextField(
         controller: controller,
         obscureText: obscureText,
         keyboardType: keyboardType,
-        validator: validator,
         decoration: InputDecoration(
           prefixIcon: Icon(icon, color: Colors.blue.shade700),
           labelText: label,
@@ -436,13 +368,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
           );
         }).toList(),
         onChanged: (newValue) {
-          setState(() {
-            _country = newValue!;
-          });
+          if (newValue != null) {
+            setState(() {
+              _country = newValue;
+            });
+          }
         },
       ),
     );
   }
 }
-
-

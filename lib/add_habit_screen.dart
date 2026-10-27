@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'habit_colors.dart';
 
 class AddHabitScreen extends StatefulWidget {
   const AddHabitScreen({super.key});
@@ -11,20 +12,9 @@ class AddHabitScreen extends StatefulWidget {
 
 class _AddHabitScreenState extends State<AddHabitScreen> {
   final TextEditingController _habitController = TextEditingController();
-  Color selectedColor = Colors.amber; // Default color
+  Color selectedColor = habitColors['Amber']!;
   Map<String, String> selectedHabitsMap = {};
   Map<String, String> completedHabitsMap = {};
-
-  final Map<String, Color> _habitColors = {
-    'Amber': Colors.amber,
-    'Red Accent': Colors.redAccent,
-    'Light Blue': Colors.lightBlue,
-    'Light Green': Colors.lightGreen,
-    'Purple Accent': Colors.purpleAccent,
-    'Orange': Colors.orange,
-    'Teal': Colors.teal,
-    'Deep Purple': Colors.deepPurple,
-  };
   String selectedColorName = 'Amber'; // Default color name
 
   @override
@@ -40,16 +30,16 @@ class _AddHabitScreenState extends State<AddHabitScreen> {
   }
 
   Future<void> _loadHabits() async {
-    final prefs = await SharedPreferences.getInstance();
-    final selectedJson = prefs.getString('selectedHabitsMap');
-    final completedJson = prefs.getString('completedHabitsMap');
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    final selectedRaw = prefs.getString('selectedHabitsMap');
+    final completedRaw = prefs.getString('completedHabitsMap');
 
     Map<String, String> loadedSelected = {};
     Map<String, String> loadedCompleted = {};
 
-    if (selectedJson != null && selectedJson.isNotEmpty) {
+    if (selectedRaw != null && selectedRaw.isNotEmpty) {
       try {
-        final Map<String, dynamic> decoded = jsonDecode(selectedJson);
+        final Map<String, dynamic> decoded = jsonDecode(selectedRaw);
         loadedSelected = decoded.map((k, v) => MapEntry(k, v.toString()));
       } catch (_) {}
     } else {
@@ -62,9 +52,9 @@ class _AddHabitScreenState extends State<AddHabitScreen> {
       };
     }
 
-    if (completedJson != null && completedJson.isNotEmpty) {
+    if (completedRaw != null && completedRaw.isNotEmpty) {
       try {
-        final Map<String, dynamic> decoded = jsonDecode(completedJson);
+        final Map<String, dynamic> decoded = jsonDecode(completedRaw);
         loadedCompleted = decoded.map((k, v) => MapEntry(k, v.toString()));
       } catch (_) {}
     }
@@ -78,35 +68,22 @@ class _AddHabitScreenState extends State<AddHabitScreen> {
   }
 
   Future<void> _saveHabits() async {
-    final prefs = await SharedPreferences.getInstance();
+    SharedPreferences prefs = await SharedPreferences.getInstance();
     await prefs.setString('selectedHabitsMap', jsonEncode(selectedHabitsMap));
     await prefs.setString('completedHabitsMap', jsonEncode(completedHabitsMap));
-  }
-
-  Color _getColorFromHex(String hexColor) {
-    hexColor = hexColor.replaceAll('#', '').trim();
-    if (hexColor.length == 6) {
-      hexColor = 'FF$hexColor';
-    }
-    return Color(int.parse('0x$hexColor'));
   }
 
   Future<void> _addHabit() async {
     final habitName = _habitController.text.trim();
     if (habitName.isEmpty) return;
 
-    final colorHex = selectedColor
-        .toARGB32()
-        .toRadixString(16)
-        .padLeft(8, '0')
-        .substring(2)
-        .toUpperCase();
+    final colorHex = colorToHex(selectedColor);
 
     setState(() {
       selectedHabitsMap[habitName] = colorHex;
       _habitController.clear();
       selectedColorName = 'Amber';
-      selectedColor = _habitColors[selectedColorName]!;
+      selectedColor = habitColors['Amber']!;
     });
 
     await _saveHabits();
@@ -131,9 +108,7 @@ class _AddHabitScreenState extends State<AddHabitScreen> {
         backgroundColor: Colors.blue.shade700,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.white),
-          onPressed: () {
-            Navigator.pop(context, true);
-          },
+          onPressed: () => Navigator.pop(context, true),
         ),
         title: const Text(
           'Configure Habits',
@@ -178,7 +153,7 @@ class _AddHabitScreenState extends State<AddHabitScreen> {
                   isExpanded: true,
                   icon: const Icon(Icons.arrow_drop_down, color: Colors.black54),
                   dropdownColor: Colors.white,
-                  items: _habitColors.keys.map((String colorName) {
+                  items: habitColors.keys.map((String colorName) {
                     return DropdownMenuItem<String>(
                       value: colorName,
                       child: Row(
@@ -187,7 +162,7 @@ class _AddHabitScreenState extends State<AddHabitScreen> {
                             width: 24,
                             height: 24,
                             decoration: BoxDecoration(
-                              color: _habitColors[colorName],
+                              color: habitColors[colorName],
                               shape: BoxShape.circle,
                             ),
                           ),
@@ -204,7 +179,7 @@ class _AddHabitScreenState extends State<AddHabitScreen> {
                     );
                   }).toList(),
                   selectedItemBuilder: (BuildContext context) {
-                    return _habitColors.keys.map((String colorName) {
+                    return habitColors.keys.map((String colorName) {
                       return Center(
                         child: Text(
                           colorName,
@@ -221,7 +196,7 @@ class _AddHabitScreenState extends State<AddHabitScreen> {
                     if (newValue != null) {
                       setState(() {
                         selectedColorName = newValue;
-                        selectedColor = _habitColors[selectedColorName]!;
+                        selectedColor = habitColors[selectedColorName]!;
                       });
                     }
                   },
@@ -248,7 +223,7 @@ class _AddHabitScreenState extends State<AddHabitScreen> {
               child: ListView(
                 children: allHabitsMap.entries.map((entry) {
                   final habitName = entry.key;
-                  final habitColor = _getColorFromHex(entry.value);
+                  final habitColor = getColorFromHex(entry.value);
                   return Padding(
                     padding: const EdgeInsets.symmetric(vertical: 4.0),
                     child: ListTile(
