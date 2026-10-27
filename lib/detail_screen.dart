@@ -1,7 +1,6 @@
-import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-import 'habit_colors.dart';
+import 'package:habit_tracker/habit_colors.dart';
+import 'package:habit_tracker/local_storage.dart';
 
 class DetailScreen extends StatefulWidget {
   final dynamic item;
@@ -33,36 +32,11 @@ class _DetailScreenState extends State<DetailScreen> {
   }
 
   Future<void> _loadHabitColorData() async {
-    final prefs = await SharedPreferences.getInstance();
+    final habitsData = await LocalStorageService.getHabitsData();
 
-    final selectedRaw = prefs.getString('selectedHabitsMap');
-    final completedRaw = prefs.getString('completedHabitsMap');
-    final previousRaw = prefs.getString('previousHabitsMap');
-
-    Map<String, String> loadedSelected = {};
-    Map<String, String> loadedCompleted = {};
-    Map<String, String> loadedPrevious = {};
-
-    if (selectedRaw != null && selectedRaw.isNotEmpty) {
-      try {
-        final Map<String, dynamic> decoded = jsonDecode(selectedRaw);
-        loadedSelected = decoded.map((k, v) => MapEntry(k, v.toString()));
-      } catch (_) {}
-    }
-
-    if (completedRaw != null && completedRaw.isNotEmpty) {
-      try {
-        final Map<String, dynamic> decoded = jsonDecode(completedRaw);
-        loadedCompleted = decoded.map((k, v) => MapEntry(k, v.toString()));
-      } catch (_) {}
-    }
-
-    if (previousRaw != null && previousRaw.isNotEmpty) {
-      try {
-        final Map<String, dynamic> decoded = jsonDecode(previousRaw);
-        loadedPrevious = decoded.map((k, v) => MapEntry(k, v.toString()));
-      } catch (_) {}
-    }
+    final loadedSelected = habitsData['selected'] ?? {};
+    final loadedCompleted = habitsData['completed'] ?? {};
+    final loadedPrevious = habitsData['previous'] ?? {};
 
     String? currentHex = loadedSelected[habitTitle] ?? loadedCompleted[habitTitle];
     String? prevHex = loadedPrevious[habitTitle];
@@ -91,10 +65,11 @@ class _DetailScreenState extends State<DetailScreen> {
   }
 
   Future<void> _saveColorData() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString('selectedHabitsMap', jsonEncode(selectedHabitsMap));
-    await prefs.setString('completedHabitsMap', jsonEncode(completedHabitsMap));
-    await prefs.setString('previousHabitsMap', jsonEncode(previousHabitsMap));
+    await LocalStorageService.saveHabitsData(
+      selectedHabitsMap: selectedHabitsMap,
+      completedHabitsMap: completedHabitsMap,
+      previousHabitsMap: previousHabitsMap,
+    );
   }
 
   Future<void> _changeHabitColor(String newColorName) async {
@@ -121,6 +96,7 @@ class _DetailScreenState extends State<DetailScreen> {
     });
 
     await _saveColorData();
+    await LocalStorageService.saveUserAction('Changed color for "$habitTitle" to $newColorName');
 
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -167,6 +143,7 @@ class _DetailScreenState extends State<DetailScreen> {
     });
 
     await _saveColorData();
+    await LocalStorageService.saveUserAction('Reverted color for "$habitTitle"');
 
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(

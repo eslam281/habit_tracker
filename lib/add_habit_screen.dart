@@ -1,7 +1,6 @@
-import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-import 'habit_colors.dart';
+import 'package:habit_tracker/habit_colors.dart';
+import 'package:habit_tracker/local_storage.dart';
 
 class AddHabitScreen extends StatefulWidget {
   const AddHabitScreen({super.key});
@@ -30,47 +29,20 @@ class _AddHabitScreenState extends State<AddHabitScreen> {
   }
 
   Future<void> _loadHabits() async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    final selectedRaw = prefs.getString('selectedHabitsMap');
-    final completedRaw = prefs.getString('completedHabitsMap');
-
-    Map<String, String> loadedSelected = {};
-    Map<String, String> loadedCompleted = {};
-
-    if (selectedRaw != null && selectedRaw.isNotEmpty) {
-      try {
-        final Map<String, dynamic> decoded = jsonDecode(selectedRaw);
-        loadedSelected = decoded.map((k, v) => MapEntry(k, v.toString()));
-      } catch (_) {}
-    } else {
-      loadedSelected = {
-        'Wake Up Early': '8BC34A',
-        'Meditate': 'FFC107',
-        'Read a Book': 'FF9800',
-        'Drink Water': '8BC34A',
-        'Eat Healthy': '009688',
-      };
-    }
-
-    if (completedRaw != null && completedRaw.isNotEmpty) {
-      try {
-        final Map<String, dynamic> decoded = jsonDecode(completedRaw);
-        loadedCompleted = decoded.map((k, v) => MapEntry(k, v.toString()));
-      } catch (_) {}
-    }
-
+    final habits = await LocalStorageService.getHabitsData();
     if (mounted) {
       setState(() {
-        selectedHabitsMap = loadedSelected;
-        completedHabitsMap = loadedCompleted;
+        selectedHabitsMap = habits['selected'] ?? {};
+        completedHabitsMap = habits['completed'] ?? {};
       });
     }
   }
 
   Future<void> _saveHabits() async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    await prefs.setString('selectedHabitsMap', jsonEncode(selectedHabitsMap));
-    await prefs.setString('completedHabitsMap', jsonEncode(completedHabitsMap));
+    await LocalStorageService.saveHabitsData(
+      selectedHabitsMap: selectedHabitsMap,
+      completedHabitsMap: completedHabitsMap,
+    );
   }
 
   Future<void> _addHabit() async {
@@ -87,6 +59,7 @@ class _AddHabitScreenState extends State<AddHabitScreen> {
     });
 
     await _saveHabits();
+    await LocalStorageService.saveUserAction('Created habit "$habitName"');
 
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -246,6 +219,7 @@ class _AddHabitScreenState extends State<AddHabitScreen> {
                             completedHabitsMap.remove(habitName);
                           });
                           await _saveHabits();
+                          await LocalStorageService.saveUserAction('Deleted habit "$habitName"');
                         },
                       ),
                     ),

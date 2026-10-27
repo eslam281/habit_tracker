@@ -1,10 +1,8 @@
-import 'dart:convert';
-
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-
-import 'add_habit_screen.dart';
-import 'detail_screen.dart';
+import 'package:habit_tracker/add_habit_screen.dart';
+import 'package:habit_tracker/detail_screen.dart';
+import 'package:habit_tracker/habit_colors.dart';
+import 'package:habit_tracker/local_storage.dart';
 
 class HabitTrackerScreen extends StatefulWidget {
   final String username;
@@ -18,6 +16,8 @@ class HabitTrackerScreen extends StatefulWidget {
 class _HabitTrackerScreenState extends State<HabitTrackerScreen> {
   Map<String, String> selectedHabitsMap = {};
   Map<String, String> completedHabitsMap = {};
+  Map<String, dynamic> userProfile = {};
+  List<String> userActions = [];
   String name = '';
 
   @override
@@ -27,73 +27,41 @@ class _HabitTrackerScreenState extends State<HabitTrackerScreen> {
   }
 
   Future<void> _loadUserData() async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
+    final profile = await LocalStorageService.getUserProfile();
+    final habits = await LocalStorageService.getHabitsData();
+    final actions = await LocalStorageService.getUserActions();
 
-    final storedName = prefs.getString('name');
-    final storedUsername = prefs.getString('username');
-    final displayName = (storedName != null && storedName.isNotEmpty)
+    final storedName = profile['name'] as String;
+    final storedUsername = profile['username'] as String;
+    final displayName = (storedName.isNotEmpty)
         ? storedName
-        : (storedUsername != null && storedUsername.isNotEmpty
+        : (storedUsername.isNotEmpty
             ? storedUsername
             : (widget.username.isNotEmpty ? widget.username : 'Habit Tracker'));
 
-    final selectedJson = prefs.getString('selectedHabitsMap');
-    final completedJson = prefs.getString('completedHabitsMap');
-
-    Map<String, String> loadedSelected = {};
-    Map<String, String> loadedCompleted = {};
-
-    if (selectedJson != null && selectedJson.isNotEmpty) {
-      try {
-        final Map<String, dynamic> decoded = jsonDecode(selectedJson);
-        loadedSelected = decoded.map((k, v) => MapEntry(k, v.toString()));
-      } catch (_) {}
-    } else {
-      // Default initial habits if none saved yet
-      loadedSelected = {
-        'Wake Up Early': '8BC34A',
-        'Meditate': 'FFC107',
-        'Read a Book': 'FF9800',
-        'Drink Water': '8BC34A',
-        'Eat Healthy': '009688',
-      };
-    }
-
-    if (completedJson != null && completedJson.isNotEmpty) {
-      try {
-        final Map<String, dynamic> decoded = jsonDecode(completedJson);
-        loadedCompleted = decoded.map((k, v) => MapEntry(k, v.toString()));
-      } catch (_) {}
-    }
-
     if (mounted) {
       setState(() {
+        userProfile = profile;
         name = displayName;
-        selectedHabitsMap = loadedSelected;
-        completedHabitsMap = loadedCompleted;
+        selectedHabitsMap = habits['selected'] ?? {};
+        completedHabitsMap = habits['completed'] ?? {};
+        userActions = actions;
       });
     }
   }
 
   Future<void> _saveHabits() async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    await prefs.setString('selectedHabitsMap', jsonEncode(selectedHabitsMap));
-    await prefs.setString('completedHabitsMap', jsonEncode(completedHabitsMap));
-  }
-
-  Color _getColorFromHex(String hexColor) {
-    hexColor = hexColor.replaceAll('#', '').trim();
-    if (hexColor.length == 6) {
-      hexColor = 'FF$hexColor';
-    }
-    return Color(int.parse('0x$hexColor'));
+    await LocalStorageService.saveHabitsData(
+      selectedHabitsMap: selectedHabitsMap,
+      completedHabitsMap: completedHabitsMap,
+    );
   }
 
   Color _getHabitColor(String habit, Map<String, String> habitsMap) {
     String? colorHex = habitsMap[habit];
     if (colorHex != null) {
       try {
-        return _getColorFromHex(colorHex);
+        return getColorFromHex(colorHex);
       } catch (_) {}
     }
     return Colors.blue;
@@ -101,21 +69,62 @@ class _HabitTrackerScreenState extends State<HabitTrackerScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final country = userProfile['country'] as String? ?? '';
+    final age = userProfile['age'] as double? ?? 25.0;
+
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Colors.blue.shade700,
-        title: Text(
-          name.isNotEmpty ? name : 'Habit Tracker',
-          style: const TextStyle(
-            fontSize: 24,
-            color: Colors.white,
-            fontWeight: FontWeight.bold,
-          ),
+        title: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              name.isNotEmpty ? name : 'Habit Tracker',
+              style: const TextStyle(
+                fontSize: 22,
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            // Conditional rendering for user profile subtitle
+            if (country.isNotEmpty)
+              Text(
+                '📍 $country • Age ${age.round()}',
+                style: const TextStyle(fontSize: 12, color: Colors.white70),
+              ),
+          ],
         ),
         automaticallyImplyLeading: true,
       ),
       body: Column(
         children: [
+          // Conditional rendering for Recent Activity Log if actions exist
+          if (userActions.isNotEmpty)
+            Material(
+              color: Colors.blue.shade50,
+              child: ExpansionTile(
+                tilePadding: const EdgeInsets.symmetric(horizontal: 16),
+                title: Text(
+                  'Recent Activity (${userActions.length})',
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.blue.shade900,
+                  ),
+                ),
+                children: userActions.reversed.take(4).map((action) {
+                  return ListTile(
+                    dense: true,
+                    leading: Icon(Icons.history, size: 18, color: Colors.blue.shade700),
+                    title: Text(
+                      action,
+                      style: const TextStyle(fontSize: 13),
+                    ),
+                  );
+                }).toList(),
+              ),
+            ),
+
           const Padding(
             padding: EdgeInsets.all(8.0),
             child: Text(
@@ -177,12 +186,14 @@ class _HabitTrackerScreenState extends State<HabitTrackerScreen> {
                       return Dismissible(
                         key: Key(habit),
                         direction: DismissDirection.endToStart,
-                        onDismissed: (direction) {
+                        onDismissed: (direction) async {
                           setState(() {
                             String color = selectedHabitsMap.remove(habit)!;
                             completedHabitsMap[habit] = color;
-                            _saveHabits();
                           });
+                          await _saveHabits();
+                          await LocalStorageService.saveUserAction('Completed habit "$habit"');
+                          _loadUserData();
                         },
                         background: Container(
                           color: Colors.green,
@@ -235,12 +246,14 @@ class _HabitTrackerScreenState extends State<HabitTrackerScreen> {
                       return Dismissible(
                         key: Key(habit),
                         direction: DismissDirection.startToEnd,
-                        onDismissed: (direction) {
+                        onDismissed: (direction) async {
                           setState(() {
                             String color = completedHabitsMap.remove(habit)!;
                             selectedHabitsMap[habit] = color;
-                            _saveHabits();
                           });
+                          await _saveHabits();
+                          await LocalStorageService.saveUserAction('Reverted completion for "$habit"');
+                          _loadUserData();
                         },
                         background: Container(
                           color: Colors.red,
@@ -304,7 +317,9 @@ class _HabitTrackerScreenState extends State<HabitTrackerScreen> {
               MaterialPageRoute(
                 builder: (context) => DetailScreen(item: selectedItem),
               ),
-            );
+            ).then((_) {
+              _loadUserData();
+            });
           },
           title: Text(
             title.toUpperCase(),

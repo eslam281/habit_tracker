@@ -1,4 +1,4 @@
-import 'dart:convert';
+import 'dart:math';
 
 import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
@@ -7,6 +7,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'country_list.dart';
 import 'habit_colors.dart';
 import 'habit_tracker_screen.dart';
+import 'local_storage.dart';
 import 'login_screen.dart';
 
 class RegisterScreen extends StatefulWidget {
@@ -131,22 +132,29 @@ class _RegisterScreenState extends State<RegisterScreen> {
     final email = _emailController.text.trim();
     final password = _passwordController.text;
 
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-
     // Assign random color hexes using extracted habitColors helper
     Map<String, String> selectedHabitsMap = {};
     for (var habit in selectedHabits) {
       selectedHabitsMap[habit] = getRandomColorHex();
     }
 
-    await prefs.setString('name', name);
-    await prefs.setString('username', username);
-    if (email.isNotEmpty) await prefs.setString('email', email);
+    await LocalStorageService.saveUserProfile(
+      name: name,
+      username: username,
+      email: email,
+      age: _age,
+      country: _country,
+    );
+
+    final prefs = await SharedPreferences.getInstance();
     if (password.isNotEmpty) await prefs.setString('password', password);
-    await prefs.setDouble('age', _age);
-    await prefs.setString('country', _country);
-    await prefs.setString('selectedHabitsMap', jsonEncode(selectedHabitsMap));
-    await prefs.setBool('isRegistered', true);
+
+    await LocalStorageService.saveHabitsData(
+      selectedHabitsMap: selectedHabitsMap,
+      completedHabitsMap: {},
+    );
+
+    await LocalStorageService.saveUserAction('User registered as "$username"');
 
     if (mounted) {
       Navigator.pushReplacement(
