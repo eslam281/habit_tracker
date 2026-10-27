@@ -73,12 +73,10 @@ class _LoginScreenState extends State<LoginScreen> {
 
     if ((isEmailMatch || isUsernameMatch) && storedPassword == enteredPassword) {
       await prefs.setBool('isLoggedIn', true);
-      await prefs.setString('currentUser', storedUsername ?? enteredInput);
       _showSnackBar('Login successful!', isError: false);
       return true;
     } else if (isDefaultMatch) {
       await prefs.setBool('isLoggedIn', true);
-      await prefs.setString('currentUser', defaultUsername);
       _showSnackBar('Login successful!', isError: false);
       return true;
     } else {
