@@ -4,6 +4,7 @@ import 'package:habit_tracker/detail_screen.dart';
 import 'package:habit_tracker/habit_colors.dart';
 import 'package:habit_tracker/local_storage.dart';
 import 'package:habit_tracker/login_screen.dart';
+import 'package:habit_tracker/notificatons_screen.dart';
 import 'package:habit_tracker/personal_info_screen.dart';
 import 'package:habit_tracker/reports_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -163,8 +164,17 @@ class _HabitTrackerScreenState extends State<HabitTrackerScreen> {
         ListTile(
           leading: Icon(Icons.notifications),
           title: Text('Notifications'),
+          onTap: () {
+            Navigator.pop(context);
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                  builder: (context) => NotificationsScreen()),
+            );
+          },
         ),
-      ListTile(
+
+        ListTile(
         leading: const Icon(Icons.logout),
         title: const Text('Sign Out'),
         onTap: () {
